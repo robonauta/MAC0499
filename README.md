@@ -1,5 +1,5 @@
 # MAC0499
-Trabalho Supervisionado de Formatura
+## Trabalho Supervisionado de Formatura
 
 **Nome do estudante:** Pedro Henrique Barbosa de Almeida
 
