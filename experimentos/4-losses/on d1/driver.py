@@ -29,13 +29,15 @@ def main():
     cdir = os.getcwd()
 
     # Gets all files .jpg
-    inputs_train = glob.glob(str(cdir)+"/../D1/input/*.jpg")
+    inputs_train = glob.glob(
+        str(cdir)+"../../subconjuntos/D1_ds0/inputs/*.jpg")
     # Gets all files .png
-    targets_train = glob.glob(str(cdir)+"/../D1/target/*.png")
+    targets_train = glob.glob(
+        str(cdir)+"../../subconjuntos/D1_ds0/target/*.png")
 
-    inputs_val = glob.glob(str(cdir)+"/../TT/input/*.jpg")
+    inputs_val = glob.glob(str(cdir)+"../../subconjuntos/TT_ds0/input/*.jpg")
     # Gets all files .png
-    targets_val = glob.glob(str(cdir)+"/../TT/target/*.png")
+    targets_val = glob.glob(str(cdir)+"../../subconjuntos/TT_ds0/target/*.png")
 
     # Sort paths
     inputs_train.sort()

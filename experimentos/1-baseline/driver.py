@@ -11,6 +11,7 @@ import tensorflow as tf
 from tensorflow.keras.optimizers import RMSprop, Adam, SGD
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.metrics import Precision, Recall
+from tensorflow.keras.losses import CategoricalCrossentropy
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from models import UNet
 from utils import *
@@ -24,53 +25,63 @@ def main():
     np.random.seed(RANDOM_SEED)
     set_random_seed(RANDOM_SEED)
 
+    epochs = 100
+    batch_size = 1
+    depths = [1, 2, 3, 4, 5]
+    loss_func = CategoricalCrossentropy()
+    learning_rate = 1e-4
+    opt = Adam(lr=learning_rate)
+    depth = 3
+
     # Gets currect directory path
     cdir = os.getcwd()
 
     # Gets all files .jpg
-    inputs = glob.glob(str(cdir)+"/../filtered_dataset/input/*.jpg")
+    inputs_train = glob.glob(
+        str(cdir)+"../../subconjuntos/D1_ds0/inputs/*.jpg")
     # Gets all files .png
-    targets = glob.glob(str(cdir)+"/../filtered_dataset/target/*.png")
+    targets_train = glob.glob(
+        str(cdir)+"../../subconjuntos/D1_ds0/target/*.png")
 
-    # Sort paths
-    inputs.sort()
-    targets.sort()
+    inputs_val = glob.glob(str(cdir)+"../../subconjuntos/TT_ds0/input/*.jpg")
+    # Gets all files .png
+    targets_val = glob.glob(str(cdir)+"../../subconjuntos/TT_ds0/target/*.png")
 
-    # Parameters
-    epochs = 60
-    batch_size = 1
-    depth = 3
-    loss_func = 'categorical_crossentropy'
-    learning_rate = 1e-4
-    opt = Adam(lr=learning_rate)
-
-    X = []
-    Y = []
-
+    X_train = []
+    Y_train = []
+    X_val = []
+    Y_val = []
     # Iterates through files and extract the patches for training, validation and testing
-    # Training
-    for i in range(0, len(inputs)):
-        X.append(fix_size(check_input_rgb(plt.imread(inputs[i])), depth))
-        Y.append(fix_size(plt.imread(targets[i]), depth))
 
-    # Converts it to a numpy array
-    X = np.array(X)
-    Y = np.array(Y)
+    for i, _ in enumerate(inputs_train):
+        x = plt.imread(inputs_train[i])
+        if len(x.shape) == 3:
+            x = x[:, :, 0]
+        X_train.append(fix_size(x, depth))
+        Y_train.append(fix_size(plt.imread(targets_train[i]), depth))
+    for i, _ in enumerate(inputs_val):
+        x = plt.imread(inputs_val[i])
+        if len(x.shape) == 3:
+            x = x[:, :, 0]
+        X_val.append(fix_size(x, depth))
+        Y_val.append(fix_size(plt.imread(targets_val[i]), depth))
 
-    # Converts targets to one-hot enconding
-    Y = img_to_ohe(Y)
+    X_train = np.array(X_train)[..., np.newaxis]
+    Y_train = img_to_ohe(np.array(Y_train))
+
+    X_val = np.array(X_val)[..., np.newaxis]
+    Y_val = img_to_ohe(np.array(Y_val))
 
     # Shuffles both the inputs and targets set
-    indexes = list(range(0, 20))
+    indexes = list(range(0, len(inputs_val)))
     np.random.shuffle(indexes)
-    X = X[indexes]
-    Y = Y[indexes]
+    X_val = X_val[indexes]
+    Y_val = Y_val[indexes]
 
-    # Splits the dataset into training, validation and testing sets.
-    X_train = X[:10]
-    Y_train = Y[:10]
-    X_val = X[10:15]
-    Y_val = Y[10:15]
+    X_val1 = X_val[:5]
+    Y_val1 = Y_val[:5]
+    X_val2 = X_val[5:10]
+    Y_val2 = Y_val[5:10]
 
     mc = ModelCheckpoint(
         "unet.hdf5", monitor='val_loss', verbose=1, save_best_only=True, mode='min')
@@ -98,7 +109,6 @@ def main():
     val_precision = history.history['val_precision']
     recall = history.history['recall']
     val_recall = history.history['val_recall']
-
 
     df = pd.DataFrame(data={'acc': [np.amax(acc)], 'val_acc': [np.amax(val_acc)], 'loss': [np.amin(loss)], 'val_loss': [np.amin(
         val_loss)], 'precision': [np.amax(precision)], 'val_precision': [np.amax(val_precision)], 'recall': [np.amax(recall)], 'val_recall': [np.amax(val_recall)]})
@@ -139,5 +149,6 @@ def main():
     plt.clf()
 
     df.to_csv('results.csv')
+
 if __name__ == '__main__':
     main()

@@ -1,3 +1,13 @@
+from tensorflow import set_random_seed
+from utils import *
+from models import UNet
+from tensorflow.keras.backend import clear_session
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.metrics import Precision, Recall
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.optimizers import RMSprop, Adam, SGD
+import tensorflow.keras.backend as K
 import os
 import sys
 import cv2
@@ -9,16 +19,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
 tf.enable_eager_execution()
-import tensorflow.keras.backend as K
-from tensorflow.keras.optimizers import RMSprop, Adam, SGD
-from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.metrics import Precision, Recall
-from tensorflow.keras.losses import CategoricalCrossentropy
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
-from tensorflow.keras.backend import clear_session
-from models import UNet
-from utils import *
-from tensorflow import set_random_seed
 
 RANDOM_SEED = 42
 
@@ -28,13 +28,15 @@ def main():
     cdir = os.getcwd()
 
     # Gets all files .jpg
-    inputs_train = glob.glob(str(cdir)+"/../../D1/input/*.jpg")
+    inputs_train = glob.glob(
+        str(cdir)+"../../subconjuntos/D1_ds0/inputs/*.jpg")
     # Gets all files .png
-    targets_train = glob.glob(str(cdir)+"/../../D1/target/*.png")
+    targets_train = glob.glob(
+        str(cdir)+"../../subconjuntos/D1_ds0/target/*.png")
 
-    inputs_val = glob.glob(str(cdir)+"/../../TT/input/*.jpg")
+    inputs_val = glob.glob(str(cdir)+"../../subconjuntos/TT_ds0/input/*.jpg")
     # Gets all files .png
-    targets_val = glob.glob(str(cdir)+"/../../TT/target/*.png")
+    targets_val = glob.glob(str(cdir)+"../../subconjuntos/TT_ds0/target/*.png")
 
     # Sort paths
     inputs_train.sort()
@@ -45,7 +47,7 @@ def main():
     # Parameters
     epochs = 100
     batch_size = 1
-    depths = [1,2,3,4,5]
+    depths = [1, 2, 3, 4, 5]
     loss_func = CategoricalCrossentropy()
     learning_rate = 1e-4
     opt = Adam(lr=learning_rate)
@@ -68,25 +70,25 @@ def main():
         Y_val = []
         # Iterates through files and extract the patches for training, validation and testing
 
-        for i, _ in enumerate(inputs_train): 
+        for i, _ in enumerate(inputs_train):
             x = plt.imread(inputs_train[i])
             if len(x.shape) == 3:
-                x = x[:,:,0]
+                x = x[:, :, 0]
             X_train.append(fix_size(x, depth))
-            Y_train.append(fix_size(plt.imread(targets_train[i]),depth))
-        for i, _ in enumerate(inputs_val): 
+            Y_train.append(fix_size(plt.imread(targets_train[i]), depth))
+        for i, _ in enumerate(inputs_val):
             x = plt.imread(inputs_val[i])
             if len(x.shape) == 3:
-                x = x[:,:,0]
+                x = x[:, :, 0]
             X_val.append(fix_size(x, depth))
-            Y_val.append(fix_size(plt.imread(targets_val[i]),depth))
+            Y_val.append(fix_size(plt.imread(targets_val[i]), depth))
 
         X_train = img_to_normal(np.array(X_train)[..., np.newaxis])
         Y_train = img_to_ohe(np.array(Y_train))
 
         X_val = img_to_normal(np.array(X_val)[..., np.newaxis])
         Y_val = img_to_ohe(np.array(Y_val))
-        
+
         # Shuffles both the inputs and targets set
         indexes = list(range(0, len(inputs_val)))
         np.random.shuffle(indexes)
@@ -98,7 +100,8 @@ def main():
         X_val2 = X_val[5:10]
         Y_val2 = Y_val[5:10]
 
-        mc = ModelCheckpoint("unet_{0}.hdf5".format(depth), monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+        mc = ModelCheckpoint("unet_{0}.hdf5".format(
+            depth), monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 
         # Initializes model
         model = UNet(depth)
@@ -107,7 +110,8 @@ def main():
 
         # Trains models
         start = time.time()
-        history = model.fit(X_train, Y_train, validation_data=(X_val1, Y_val1), epochs=epochs, batch_size=batch_size, verbose=2, callbacks=[mc])
+        history = model.fit(X_train, Y_train, validation_data=(
+            X_val1, Y_val1), epochs=epochs, batch_size=batch_size, verbose=2, callbacks=[mc])
         end = time.time()
 
         # Plots some performance graphs
@@ -117,7 +121,7 @@ def main():
         np.save('history_{0}.npy'.format(depth), history.history)
 
         clear_session()
-        
+
         epochs_range = list(range(0, len(loss)))
 
         ax[0].plot(epochs_range[1:], loss[1:], label='Depth {0}'.format(depth))
@@ -128,7 +132,8 @@ def main():
         ax[0].set_ylabel('Loss')
         ax[0].legend()
 
-        ax[1].plot(epochs_range[1:], val_loss[1:], label='Depth {0}'.format(depth))
+        ax[1].plot(epochs_range[1:], val_loss[1:],
+                   label='Depth {0}'.format(depth))
         ax[1].xaxis.set_ticks(np.arange(0, 101, 5))
         ax[1].yaxis.set_ticks(np.arange(0, 1, 0.1))
         ax[1].set_title('Validation loss - UNet')
@@ -137,7 +142,7 @@ def main():
         ax[1].legend()
 
         fig.savefig('learning_curve.png')
-              
+
         model = UNet(depth)
 
         model.load_weights("unet_{0}.hdf5".format(depth))
@@ -160,6 +165,7 @@ def main():
         df = df.append(df2)
 
         df.to_csv('results.csv', index=False)
+
 
 if __name__ == '__main__':
     main()
