@@ -48,3 +48,5 @@ Neste trabalho, estudamos o impacto da variação de alguns parâmetros de uma C
     * ```TT_ds1```: conjunto de imagens remanescentes do título "AosugiruHaru"
     * ```TT_ds2```: conjunto de imagens remanescentes do título "JijiBabaFight"
     * ```TT_ds3```: conjunto de imagens remanescentes do título "MariaSamaNihaNaisyo"
+    
+ Observação: os conjuntos de validação V_1 e V_2 são construídos a partir de um dos conjuntos TT_ds#. 
